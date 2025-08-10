@@ -1,0 +1,11 @@
+{
+  "name": "GNOME Shell Pod Development Container",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "extensions": [
+    "ms-vscode.cpptools",
+    "ms-vscode.cmake-tools",
+    "ms-vscode.git"
+  ]
+}
