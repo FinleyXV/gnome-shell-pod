@@ -1,27 +1,33 @@
-# Fedora version (e.g. 32, 33, ...) can be passed using --build-arg=fedora_version=...
-ARG fedora_version=latest
-FROM registry.fedoraproject.org/fedora:${fedora_version}
+FROM archlinux:latest
 
-# Install required packages.
-RUN dnf update -y && \
-    dnf --nodocs install -y \
-        gnome-session-xsession gnome-extensions-app xorg-x11-xinit \
-        xorg-x11-server-Xvfb gnome-terminal xdotool xautomation sudo && \
-    dnf clean all -y && \
-    rm -rf /var/cache/dnf
+# Install required packages
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm \
+      gnome-session \
+      gnome-shell \
+      gnome-terminal \
+      xorg-xinit \
+      xorg-server-xvfb \
+      xdotool \
+      xautomation \
+      sudo \
+      systemd \
+      dbus \
+      polkit && \
+    pacman -Scc --noconfirm
 
-# Copy system configuration.
+# Copy system configuration (make sure you have etc/ folder in your build context)
 COPY etc /etc
 
-# Start Xvfb via systemd on display :99.
-# Add the gnomeshell user with no password.
+# Enable and configure systemd services and user
 RUN systemctl unmask systemd-logind.service console-getty.service getty.target && \
     systemctl enable xvfb@:99.service && \
     systemctl set-default multi-user.target && \
-    adduser -m -U -G users,adm gnomeshell && \
-    echo "gnomeshell     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    useradd -m -G users,adm gnomeshell && \
+    echo "gnomeshell ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Add the scripts.
+# Copy your scripts to /usr/local/bin
 COPY bin /usr/local/bin
 
-CMD [ "/usr/sbin/init", "systemd.unified_cgroup_hierarchy=0" ]
+# Set default command to start systemd with the necessary cgroup setting
+CMD ["/usr/lib/systemd/systemd", "systemd.unified_cgroup_hierarchy=0"]
